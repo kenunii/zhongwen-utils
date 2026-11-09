@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kenunii/duchinese-remarkable/backend/internal/progress"
+	"github.com/kenunii/zhongwen-utils/backend/internal/progress"
 )
 
 type fakeFinishClient struct {

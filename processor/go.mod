@@ -1,4 +1,4 @@
-module github.com/kenunii/duchinese-remarkable/processor
+module github.com/kenunii/zhongwen-utils/processor
 
 go 1.26.0
 

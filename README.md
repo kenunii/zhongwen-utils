@@ -1,14 +1,13 @@
-# DuChinese for reMarkable
+# zhongwen-utils
 
-An unofficial, personal-use DuChinese client for reMarkable tablets.
+A collection of Chinese reading tools, including an unofficial DuChinese client for reMarkable and PDF readers for desktop and tablet.
 
 ## Local PDF support
 
 The laptop-side OCR and page preparation tools live in the
 [`pdf-import/` Python subproject](pdf-import/README.md). It contains the tested
 PaddleOCR runner, single-pass LLM annotations with audited OCR corrections,
-benchmark viewer, and validated single-page assembly. Full-book orchestration
-and multi-page navigation are still to be implemented.
+benchmark viewer, and validated single-page assembly. It supports multi-page processing and reading on desktop and reMarkable.
 
 The separate PDF test app lives in `packaging/pdf-test/` and reuses the word
 popup and sentence bar in `packaging/shared/` with the DuChinese reader.
@@ -200,8 +199,8 @@ This writes only the mobile device UUID and token to
 Transfer both sessions during the first install:
 
 ```sh
-git clone https://github.com/kenunii/duchinese-remarkable.git
-cd duchinese-remarkable
+git clone https://github.com/kenunii/zhongwen-utils.git
+cd zhongwen-utils
 scripts/install-appload-rm2.sh --with-session --with-mobile-session
 ```
 

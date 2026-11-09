@@ -10,9 +10,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/kenunii/duchinese-remarkable/backend/internal/appload"
-	"github.com/kenunii/duchinese-remarkable/backend/internal/duchinese"
-	"github.com/kenunii/duchinese-remarkable/backend/internal/progress"
+	"github.com/kenunii/zhongwen-utils/backend/internal/appload"
+	"github.com/kenunii/zhongwen-utils/backend/internal/duchinese"
+	"github.com/kenunii/zhongwen-utils/backend/internal/progress"
 )
 
 const (
