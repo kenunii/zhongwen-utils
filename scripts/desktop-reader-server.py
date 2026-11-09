@@ -2,6 +2,7 @@
 """Loopback-only reader and local PDF annotation persistence."""
 import argparse
 import hashlib
+import importlib.util
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import mimetypes
@@ -15,6 +16,10 @@ import tempfile
 from urllib.parse import urlsplit
 import pymupdf
 
+spec = importlib.util.spec_from_file_location('desktop_library', Path(__file__).with_name('desktop-library.py'))
+library = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(library)
+
 
 def serve(collection, source, frontend, output, state, port):
     manifest = json.loads((collection/'manifest.json').read_text())
@@ -26,6 +31,8 @@ def serve(collection, source, frontend, output, state, port):
     progress_path = state/'reading-position.json'
     progress = json.loads(progress_path.read_text()) if progress_path.exists() else None
     token = secrets.token_urlsafe(32)
+    if port == 8767:
+        library.atomic(library.LIBRARY/'main.json', {'id':manifest['pdf_sha256'],'title':manifest['title'],'port':port})
     images = {'/'+collection.name+'/'+e['image']:collection/e['image'] for e in manifest['pages']}
     dimensions = {}
     for e in manifest['pages']:
@@ -84,19 +91,39 @@ def serve(collection, source, frontend, output, state, port):
             if path=='/api/progress':
                 self.send(200,json.dumps(dict(position=progress,token=token)).encode());return
             if path=='/api/health':
-                self.send(200,json.dumps(dict(book=manifest['pdf_sha256'],version=1)).encode());return
+                self.send(200,json.dumps(dict(book=manifest['pdf_sha256'],version=2)).encode());return
+            if path=='/api/books':
+                main=library.read(library.LIBRARY/'main.json')
+                books=([main] if main else []) + [b for b in library.catalog() if not main or b['id'] != main['id']]
+                self.send(200,json.dumps(dict(books=books),ensure_ascii=False).encode());return
+            if path=='/api/job':
+                book_id=urlsplit(self.path).query
+                try: self.send(200,json.dumps(library.job(book_id)).encode())
+                except ValueError: self.send(400,b'{}')
+                return
             file = frontend/({'/':'index.html'}.get(path,path.lstrip('/'))) if path in ['/', '/index.html','/reader.js','/book.js','/notes.js'] else images.get(path)
             if file and file.is_file():
                 self.send(200,file.read_bytes(),mimetypes.guess_type(file.name)[0] or 'application/octet-stream')
             else:self.send(404,b'{}')
         def do_POST(self):
             nonlocal progress
-            if self.headers.get('Host') not in {f'127.0.0.1:{port}',f'localhost:{port}'} or self.path not in {'/api/notes','/api/progress','/api/reveal'} or self.headers.get('X-Reader-Token')!=token:
+            if self.headers.get('Host') not in {f'127.0.0.1:{port}',f'localhost:{port}'} or self.path not in {'/api/notes','/api/progress','/api/reveal','/api/import','/api/process','/api/open'} or self.headers.get('X-Reader-Token')!=token:
                 self.send(403,b'{}');return
             try:
                 length=int(self.headers.get('Content-Length','0'))
+                if self.path=='/api/import':
+                    if not 0 < length <= 256*1024*1024: raise ValueError('PDF must be at most 256 MiB')
+                    from urllib.parse import unquote
+                    result=library.import_pdf(self.rfile.read(length),unquote(self.headers.get('X-File-Name','Imported PDF.pdf')))
+                    self.send(200,json.dumps(result,ensure_ascii=False).encode());return
                 if not 0<length<100000:raise ValueError('Invalid request size')
                 note=json.loads(self.rfile.read(length))
+                if self.path=='/api/process':
+                    library.start(note['id']); self.send(202,b'{"started":true}');return
+                if self.path=='/api/open':
+                    main=library.read(library.LIBRARY/'main.json',{})
+                    target=main['port'] if note['id']==main.get('id') else library.open_book(note['id'])
+                    self.send(200,json.dumps({'port':target}).encode());return
                 if self.path=='/api/reveal':
                     target=output if output.exists() else source
                     try:

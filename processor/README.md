@@ -22,6 +22,15 @@ PDF processing currently requires an internet connection; saved lookups work off
 Limits: 256 MiB per document,
 7 MB per extracted PDF page (Google's inline request limit).
 
+The annotation prompt and shared defaults live in
+`pdf-import/src/duchinese_pdf/prompts/line_contract.txt` and `line_policy.json`.
+Run `python scripts/sync-processor-contract.py` after changing them to regenerate
+the tablet's embedded prompt and policy. Installation checks that the generated
+files are current. Python and Go run the same alignment examples from
+`processor/testdata/annotation_cases.json`. OCR transport, geometry and job
+management remain separate: the tablet runs a standalone Go binary and submits
+PDF pages, while the desktop uses Python and submits rendered images.
+
 ## Build and install
 
 Run `go test -race ./...` in this directory. The synthetic tests make no cloud calls.

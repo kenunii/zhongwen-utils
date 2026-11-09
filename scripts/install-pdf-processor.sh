@@ -10,6 +10,7 @@ credentials=$(realpath "$2")
 root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 output="$root/build/pdf-processor"
 mkdir -p "$output"
+python3 "$root/scripts/sync-processor-contract.py" --check
 (cd "$root/processor" && CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 \
     go build -trimpath -ldflags='-s -w' -o "$output/duchinese-pdf-processor" .)
 # The optional private vpn object selects the reproducible userspace runtime.

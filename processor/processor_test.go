@@ -36,6 +36,55 @@ func TestCompileWrappedWord(t *testing.T) {
 		}
 	}
 }
+func TestExtraSentencePunctuation(t *testing.T) {
+	extra := strings.Replace(answerJSON, `"meaning":"study"}]`, `"meaning":"study"},{"text":"。","pinyin":"","meaning":""}]`, 1)
+	page, err := compile(sampleSource(), extra)
+	if err != nil || len(page.Words) != 1 || page.Sentences[0].Text != "学习" {
+		t.Fatalf("extra punctuation changed source alignment: %+v %v", page, err)
+	}
+	for _, bad := range []string{
+		strings.Replace(extra, `"text":"。","pinyin":"","meaning":""`, `"text":"好","pinyin":"hǎo","meaning":"good"`, 1),
+		strings.Replace(extra, `"text":"。","pinyin":"","meaning":""`, `"text":"。","pinyin":"x","meaning":""`, 1),
+	} {
+		if _, err := compile(sampleSource(), bad); err == nil {
+			t.Fatal("accepted inserted or annotated token")
+		}
+	}
+}
+func TestSharedAnnotationCases(t *testing.T) {
+	data, err := os.ReadFile("testdata/annotation_cases.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cases []struct {
+		Name      string          `json:"name"`
+		Text      string          `json:"text"`
+		Sentences json.RawMessage `json:"sentences"`
+		Valid     bool            `json:"valid"`
+	}
+	if err := json.Unmarshal(data, &cases); err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range cases {
+		t.Run(tc.Name, func(t *testing.T) {
+			s := Source{Width: 1000, Height: 100, Lines: []InputLine{{"L1", []string{tc.Text}}}}
+			for i, c := range []rune(tc.Text) {
+				s.Characters = append(s.Characters, Character{string(c), Box{float64(i * 20), 0, 20, 20}, 0})
+			}
+			raw, err := json.Marshal(map[string]any{"lines": []map[string]string{{"id": "L1", "text": tc.Text, "correction_reason": ""}}, "sentences": tc.Sentences})
+			if err != nil {
+				t.Fatal(err)
+			}
+			page, err := compile(s, string(raw))
+			if (err == nil) != tc.Valid {
+				t.Fatalf("valid=%v, error=%v", tc.Valid, err)
+			}
+			if err == nil && (len(page.Sentences) != 1 || page.Sentences[0].Text != tc.Text) {
+				t.Fatalf("source text changed: %+v", page.Sentences)
+			}
+		})
+	}
+}
 func TestExerciseBlankNotMerged(t *testing.T) {
 	s := sampleSource()
 	s.Characters[0].Box = Box{10, 10, 20, 20}

@@ -1,5 +1,7 @@
 """Regression checks for the experimental model-independent alignment contract."""
 import copy
+import json
+import subprocess
 import sys
 from pathlib import Path
 import unittest
@@ -30,3 +32,31 @@ class LineContractTests(unittest.TestCase):
     def test_rejects_reason_without_change(self):
         a=copy.deepcopy(self.answer);a['lines'][0]['text']='自已。'
         with self.assertRaises(ValueError):compile_lines(self.source,a)
+    def test_removes_only_extra_unannotated_sentence_punctuation(self):
+        a=copy.deepcopy(self.answer)
+        a['sentences'][0]['words'].append({'text':'。','pinyin':'','meaning':''})
+        corrected, annotations, audit = compile_lines(self.source,a)
+        self.assertEqual(''.join(c['text'] for c in corrected['characters']),'自己。')
+        self.assertEqual(''.join(w['hanzi'] for w in annotations['words']),'自己。')
+        self.assertEqual(audit['removed_extra_sentence_punctuation'][0]['source_offset'],3)
+        self.assertEqual(len(a['sentences'][0]['words']),3)
+    def test_still_rejects_inserted_words_or_annotated_punctuation(self):
+        for extra in [{'text':'好','pinyin':'hǎo','meaning':'good'},
+                      {'text':'。','pinyin':'x','meaning':'not empty'}]:
+            a=copy.deepcopy(self.answer);a['sentences'][0]['words'].append(extra)
+            with self.subTest(extra=extra),self.assertRaises(ValueError):compile_lines(self.source,a)
+    def test_shared_tablet_desktop_cases(self):
+        root=Path(__file__).resolve().parents[2]
+        for case in json.loads((root/'processor/testdata/annotation_cases.json').read_text()):
+            with self.subTest(case=case['name']):
+                text=case['text']
+                source={'image_size':[1000,100], 'characters':[{'offset':i,'text':c,'line':0,'box':[i*20,0,20,20]} for i,c in enumerate(text)]}
+                answer={'lines':[{'id':'L1','text':text,'correction_reason':''}], 'sentences':case['sentences']}
+                if case['valid']:
+                    _, annotations, _ = compile_lines(source,answer)
+                    self.assertEqual(annotations['sentences'][0]['text'],text)
+                else:
+                    with self.assertRaises(ValueError): compile_lines(source,answer)
+    def test_tablet_embedded_contract_is_current(self):
+        root=Path(__file__).resolve().parents[2]
+        subprocess.run([sys.executable,str(root/'scripts/sync-processor-contract.py'),'--check'],check=True)

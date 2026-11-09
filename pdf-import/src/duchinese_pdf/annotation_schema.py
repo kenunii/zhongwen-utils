@@ -1,7 +1,8 @@
 """Strict API schema and deterministic substitution policy."""
-# A small, explicit policy rather than accepting any substitution the model calls
-# confident. Extend only with visually similar character groups.
-CONFUSABLE_GROUPS = ('己已巳', '未末', '土士', '日曰', '乌鸟', '千干', '天夭', '人入')
+from .policy import POLICY
+
+# Shared source for the desktop and the generated standalone tablet binary.
+CONFUSABLE_GROUPS = tuple(POLICY['confusable_groups'])
 
 
 def obj(properties):

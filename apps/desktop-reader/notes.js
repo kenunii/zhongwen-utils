@@ -21,6 +21,58 @@ const notesReady = fetch('/api/notes').then(r => {
   noteToken = data.token; notes = data.notes;
   notes.forEach(renderNote);
 }).catch(error => { $('notice').textContent = error.message; });
+async function libraryRequest(path, body, extra={}) {
+  await notesReady;
+  const response = await fetch(path, {method:'POST', headers:{'X-Reader-Token':noteToken,...extra},body});
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || 'Library request failed');
+  return result;
+}
+async function openLibraryBook(id) {
+  if (id === book.id) return;
+  await Promise.all(notes.filter(n => noteSaves.has(n.id)).map(saveNote));
+  await saveQueue; savePosition();
+  const result = await libraryRequest('/api/open',JSON.stringify({id}));
+  location.href = `http://127.0.0.1:${result.port}/`;
+}
+async function refreshLibrary() {
+  const response = await fetch('/api/books');
+  if (!response.ok) return;
+  const data = await response.json(), select = $('bookSelect');
+  const books = data.books.some(item => item.id === book.id) ? data.books : [{id:book.id,title:book.title},...data.books];
+  select.replaceChildren(...books.map(item => new Option(item.title,item.id,item.id===book.id,item.id===book.id)));
+  const imported = data.books.some(item => item.id === book.id && !item.port);
+  $('processBook').hidden = !imported;
+  if (imported) {
+    const status = await fetch('/api/job?'+book.id).then(r => r.json());
+    $('processBook').disabled = !['idle','error'].includes(status.state);
+    $('processBook').textContent = status.state === 'error' ? 'Retry processing' : 'Process';
+    $('libraryStatus').textContent = status.state === 'idle' ? '' : `${status.message || status.state}${status.total ? ` (${status.done || 0}/${status.total})` : ''}${status.state === 'error' ? ' Retry may repeat a cloud request.' : ''}`;
+    if (status.state === 'running') setTimeout(refreshLibrary,2000);
+    if (status.state === 'completed' && !sessionStorage.getItem('processed.'+book.id)) {
+      sessionStorage.setItem('processed.'+book.id,'1'); location.reload();
+    }
+  }
+}
+async function importLibraryFile(file) {
+  if (!file || !(/\.pdf$/i.test(file.name) || file.type === 'application/pdf')) throw new Error('Choose a PDF file');
+  $('libraryStatus').textContent = 'Importing and preparing PDF…';
+  const result = await libraryRequest('/api/import',file,{'Content-Type':'application/pdf','X-File-Name':encodeURIComponent(file.name)});
+  await openLibraryBook(result.id);
+  if (result.id === book.id) { $('libraryStatus').textContent = ''; await refreshLibrary(); }
+}
+$('bookSelect').addEventListener('change', event => openLibraryBook(event.target.value).catch(error => { $('notice').textContent=error.message; event.target.value=book.id; }));
+$('addBook').onclick = () => $('pdfImport').click();
+$('pdfImport').onchange = event => importLibraryFile(event.target.files[0]).catch(error => { $('libraryStatus').textContent=error.message; });
+$('processBook').onclick = async () => {
+  $('processBook').disabled = true;
+  try { await libraryRequest('/api/process',JSON.stringify({id:book.id})); sessionStorage.removeItem('processed.'+book.id); await refreshLibrary(); }
+  catch (error) { $('libraryStatus').textContent=error.message; $('processBook').disabled=false; }
+};
+viewer.addEventListener('dragover', event => { if (event.dataTransfer.types.includes('Files')) { event.preventDefault(); viewer.classList.add('drop-target'); } });
+viewer.addEventListener('dragleave', () => viewer.classList.remove('drop-target'));
+viewer.addEventListener('drop', event => { event.preventDefault(); viewer.classList.remove('drop-target'); importLibraryFile(event.dataTransfer.files[0]).catch(error => { $('libraryStatus').textContent=error.message; }); });
+refreshLibrary().catch(() => {});
 function setTextMode(enabled) {
   textMode = enabled;
   viewer.classList.toggle('text-mode', enabled);
@@ -224,7 +276,7 @@ notesReady.then(() => {
 });
 document.addEventListener('keydown', event => {
   if (event.isComposing || event.repeat || event.ctrlKey || event.metaKey || event.altKey ||
-      event.target.closest('input,textarea,[contenteditable]')) return;
+      event.target.closest('input,textarea,select,[contenteditable]')) return;
   if (event.key.toLowerCase() === 't') { event.preventDefault(); dismiss(); setTextMode(!textMode); }
   if (event.key === 'Escape') setTextMode(false);
 });

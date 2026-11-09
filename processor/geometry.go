@@ -58,8 +58,6 @@ type Answer struct {
 	} `json:"sentences"`
 }
 
-var confusables = []string{"己已巳", "未末", "土士", "日曰", "乌鸟", "千干", "天夭", "人入"}
-
 func hasHan(text string) bool {
 	for _, r := range text {
 		if unicode.Is(unicode.Han, r) {
@@ -142,9 +140,19 @@ func compile(source Source, raw string) (Page, error) {
 		if strings.TrimSpace(sentence.Translation) == "" || len(sentence.Words) == 0 {
 			return page, fmt.Errorf("empty sentence translation")
 		}
-		for _, word := range sentence.Words {
+		kept := 0
+		for wi, word := range sentence.Words {
 			count := len([]rune(word.Text))
 			end := cursor + count
+			// Some responses add sentence-final punctuation not present in the
+			// returned OCR lines. Ignore only a standalone, unannotated mark;
+			// all remaining tokens must still match the complete source exactly.
+			chars := []rune(word.Text)
+			if wi == len(sentence.Words)-1 && count == 1 && unicode.IsPunct(chars[0]) &&
+				strings.TrimSpace(word.Pinyin) == "" && strings.TrimSpace(word.Meaning) == "" &&
+				(cursor == len(corrected) || corrected[cursor] != chars[0]) {
+				continue
+			}
 			if count == 0 || end > len(corrected) || string(corrected[cursor:end]) != word.Text {
 				return page, fmt.Errorf("annotation changed or omitted source text at character %d", cursor)
 			}
@@ -159,7 +167,11 @@ func compile(source Source, raw string) (Page, error) {
 			if strings.TrimSpace(word.Pinyin) != "" {
 				page.Words = append(page.Words, Word{word.Text, word.Pinyin, word.Meaning, si, wordBoxes(source.Characters[cursor:end])})
 			}
+			kept++
 			cursor = end
+		}
+		if kept == 0 {
+			return page, fmt.Errorf("empty sentence translation")
 		}
 		page.Sentences = append(page.Sentences, Sentence{string(corrected[start:cursor]), sentence.Translation})
 	}

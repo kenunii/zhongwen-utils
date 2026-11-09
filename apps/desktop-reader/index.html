@@ -5,12 +5,17 @@
 <title>中文课本</title>
 <style>
 *{box-sizing:border-box}html{color-scheme:light;height:100%;overflow:hidden}body{height:100%;overflow:hidden;display:flex;flex-direction:column;margin:0;background:#eeede9;color:#292b29;font:14px system-ui,sans-serif}button,input{font:inherit;color:inherit}button{cursor:pointer;border:0;background:transparent;border-radius:6px;padding:7px 11px}button:hover{background:#e7e8e2}button:disabled{opacity:.3;cursor:default}button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid #52775d;outline-offset:2px}header{flex:0 0 54px;position:relative;z-index:5;height:54px;background:#fafaf7ee;backdrop-filter:blur(12px);border-bottom:1px solid #dcded6;display:flex;align-items:center;gap:5px;padding:0 18px}.name{font-weight:550;margin-right:auto}#page{width:48px;border:0;border-radius:4px;background:#eaece5;text-align:center;padding:6px;appearance:textfield}#page::-webkit-inner-spin-button{appearance:none}.muted{color:#7a7e75}#zoom{min-width:65px}#pages{position:relative;flex:1;min-height:0;width:100%;overflow:auto;overscroll-behavior:contain;overflow-anchor:none;padding:18px 12px;outline:none}.sheet{position:relative;margin:0 auto 18px;width:var(--page-width);background:white;box-shadow:0 2px 15px #252a2314}.scan{display:block;width:100%;height:100%}.regions{position:absolute;inset:0}.word{position:absolute;padding:0;border-radius:2px;background:transparent;touch-action:manipulation}.word:hover,.word.selected,.word:focus-visible{background:#dfbf4550;outline:none}#popup{position:fixed;z-index:10;width:330px;max-width:calc(100vw - 24px);max-height:65vh;overflow:auto;padding:21px 23px;background:#fffefa;border:1px solid #e0dfd4;border-radius:12px;box-shadow:0 8px 40px #20271d26}#popup[hidden]{display:none}#close{float:right;margin:-9px -12px 0 0;font-size:21px;color:#7a7e75}#hanzi{font-size:30px;padding-right:15px}#pinyin{font-size:18px;color:#557052;margin:5px 0 10px}#meaning,#sentence{line-height:1.6}details{border-top:1px solid #e8e8de;margin-top:17px;padding-top:12px}summary{cursor:pointer;color:#65735f;font-size:13px}#source{margin:12px 0 7px;color:#6b6b61;line-height:1.7}#sentence{margin:0}#notice{text-align:center;color:#6b6b61;padding:10px}#notice:empty{display:none}@media(max-width:550px){header{padding:0 8px;gap:0}.name{font-size:12px}button{padding:7px 8px}.sheet{margin-bottom:12px}}
+#bookSelect{max-width:35%;border:0;border-radius:6px;background:transparent;font:inherit;font-weight:550;color:inherit;padding:7px 5px;cursor:pointer}#bookSelect:hover{background:#e7e8e2}#bookSelect:focus-visible{outline:2px solid #52775d;outline-offset:2px}
+#libraryStatus{position:fixed;bottom:12px;right:12px;z-index:20;background:#fffefa;border:1px solid #dcded6;border-radius:8px;padding:10px 14px;max-width:80vw}#libraryStatus:empty{display:none}#pages.drop-target{outline:3px dashed #52775d;outline-offset:-8px}
 .word.hovered{background:#dfbf4550}
 .text-mode,.text-mode .word{cursor:text}.note{position:absolute;z-index:2;display:block;resize:none;overflow:hidden;border:0;border-radius:0;padding:0;margin:0;outline:none;background:transparent;color:#244c70;font-family:sans-serif;line-height:1.4;white-space:pre-wrap}.note:focus{outline:1px solid #8298ae;background:#fffdf9cc}.note:hover{outline:1px dotted #8298ae}.note.dragging{cursor:grabbing;user-select:none}.note:not(:focus):not(.dragging){opacity:0;pointer-events:none}.note-preview{position:absolute;z-index:2;pointer-events:none;color:#244c70;font-family:sans-serif;line-height:1.4;white-space:pre-wrap;overflow-wrap:break-word}.note-preview span{pointer-events:auto;cursor:text}.note:focus+.note-preview,.note.dragging+.note-preview{visibility:hidden}
 .note-resize{position:absolute;z-index:3;width:12px;height:24px;transform:translate(-50%,-50%);border:1px solid #8298ae;border-radius:4px;background:#fffdf9;cursor:ew-resize;touch-action:none;visibility:hidden}.note:focus+.note-preview+.note-resize{visibility:visible}
 </style>
 <header>
- <span class="name">中文课本</span>
+ <select id="bookSelect" class="name" aria-label="Choose a book"></select>
+ <input id="pdfImport" type="file" accept="application/pdf,.pdf" hidden>
+ <button id="addBook" title="Import a PDF">＋ PDF</button>
+ <button id="processBook" hidden title="Send pages to Google Vision and DeepSeek">Process</button>
  <button id="reveal" style="font-size:12px;color:#65735f" title="Open the PDF's location">show this file in explorer</button>
  <input id="page" type="number" min="1" aria-label="PDF page">
  <span class="muted" id="total"></span>
@@ -19,6 +24,7 @@
  <button id="in" title="Zoom in (+)" aria-label="Zoom in">+</button>
 </header>
 <div id="notice" role="status"></div>
+<div id="libraryStatus" role="status"></div>
 <main id="pages" tabindex="0" aria-label="Textbook pages"></main>
 <aside id="popup" hidden aria-label="Word translation">
  <button id="close" aria-label="Close translation">×</button>

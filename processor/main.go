@@ -94,7 +94,7 @@ func main() {
 	keys := flag.String("credentials", filepath.Join(home, ".config/duchinese-pdf-processing/credentials.json"), "private API credential file")
 	parallelPages := flag.Int("parallel-pages", defaultParallelPages, "maximum pages processed at once (1-20)")
 	flag.Parse()
-	if *parallelPages < 1 || *parallelPages > 20 {
+	if *parallelPages < 1 || *parallelPages > maxParallelPages {
 		log.Fatal("parallel-pages must be between 1 and 20")
 	}
 	host, _, err := net.SplitHostPort(*address)

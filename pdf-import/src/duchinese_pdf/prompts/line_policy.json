@@ -1,0 +1,15 @@
+{
+  "confusable_groups": [
+    "己已巳",
+    "未末",
+    "土士",
+    "日曰",
+    "乌鸟",
+    "千干",
+    "天夭",
+    "人入"
+  ],
+  "default_parallel_pages": 10,
+  "max_parallel_pages": 20,
+  "max_batch_bytes": 28000000
+}

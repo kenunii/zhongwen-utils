@@ -8,6 +8,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.request
 
@@ -68,10 +69,36 @@ def main():
         return
     url = 'http://127.0.0.1:8767/'
     book_id = json.loads((args.collection/'manifest.json').read_text())['pdf_sha256']
+    document_dir = Path.home()/'chinese-docs'
+    document_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+    output_pdf = document_dir/'Chinese Book.pdf'
+    previous_pdf = Path.home()/'Documents/Chinese Book.pdf'
+    if not output_pdf.exists() and previous_pdf.exists():
+        # Copy atomically, retaining the old PDF and all its annotations.
+        before = previous_pdf.stat()
+        fd, temporary_name = tempfile.mkstemp(prefix='.chinese-book-', suffix='.pdf', dir=document_dir)
+        temporary = Path(temporary_name)
+        try:
+            with previous_pdf.open('rb') as src, os.fdopen(fd, 'wb') as dst:
+                shutil.copyfileobj(src, dst)
+            after = previous_pdf.stat()
+            if (before.st_ino, before.st_size, before.st_mtime_ns) != (after.st_ino, after.st_size, after.st_mtime_ns):
+                raise SystemExit('The existing PDF changed during migration; reopen the reader to retry.')
+            def digest(path):
+                with path.open('rb') as f: return hashlib.file_digest(f, 'sha256').digest()
+            if digest(previous_pdf) != digest(temporary):
+                raise SystemExit('The PDF copy could not be verified.')
+            try: os.link(temporary, output_pdf)
+            except FileExistsError: pass
+        finally:
+            temporary.unlink(missing_ok=True)
     try:
         with urllib.request.urlopen(url+'api/health', timeout=1) as response:
-            if json.load(response)['book'] != book_id:
+            health = json.load(response)
+            if health['book'] != book_id:
                 raise SystemExit('Another textbook is open on reader port 8767.')
+            if health.get('version', 1) < 2:
+                raise SystemExit('Close the existing reader and its server before reopening to activate the PDF library.')
     except (OSError, ValueError):
         interpreter = Path(os.environ.get('CHINESE_BOOK_PYTHON',
                            ROOT/'apps/desktop-reader/.venv/bin/python'))
@@ -86,7 +113,7 @@ def main():
         with (state/'server.log').open('a') as log:
             process = subprocess.Popen([str(interpreter), str(ROOT/'scripts/desktop-reader-server.py'),
                 str(args.collection.resolve()), str(args.pdf.resolve()), str(page.parent),
-                str(Path.home()/'Documents/Chinese Book.pdf'), str(state)],
+                str(output_pdf), str(state)],
                 stdout=log, stderr=log, start_new_session=True)
         for _ in range(80):
             try:

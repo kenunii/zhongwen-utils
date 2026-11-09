@@ -9,6 +9,7 @@ let progressToken = '', progressReady = false, positionTouched = false;
 const sheets = [];
 const unloadTimers = new Map();
 const nearbyPages = new Set(), visiblePages = new Set();
+$('bookSelect').add(new Option(book.title, book.id, true, true));
 function dismiss() {
   $('popup').hidden = true;
   document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));

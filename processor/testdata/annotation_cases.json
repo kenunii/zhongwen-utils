@@ -1,0 +1,173 @@
+[
+  {
+    "name": "ordinary words",
+    "text": "学习",
+    "sentences": [
+      {
+        "translation": "Study.",
+        "words": [
+          {
+            "text": "学习",
+            "pinyin": "xué xí",
+            "meaning": "study"
+          }
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "extra final punctuation",
+    "text": "学习",
+    "sentences": [
+      {
+        "translation": "Study.",
+        "words": [
+          {
+            "text": "学习",
+            "pinyin": "xué xí",
+            "meaning": "study"
+          },
+          {
+            "text": "。",
+            "pinyin": "",
+            "meaning": ""
+          }
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "source punctuation preserved",
+    "text": "学习。",
+    "sentences": [
+      {
+        "translation": "Study.",
+        "words": [
+          {
+            "text": "学习",
+            "pinyin": "xué xí",
+            "meaning": "study"
+          },
+          {
+            "text": "。",
+            "pinyin": "",
+            "meaning": ""
+          }
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "inserted Chinese rejected",
+    "text": "学习",
+    "sentences": [
+      {
+        "translation": "Study.",
+        "words": [
+          {
+            "text": "学习",
+            "pinyin": "xué xí",
+            "meaning": "study"
+          },
+          {
+            "text": "好",
+            "pinyin": "hǎo",
+            "meaning": "good"
+          }
+        ]
+      }
+    ],
+    "valid": false
+  },
+  {
+    "name": "annotated punctuation rejected",
+    "text": "学习",
+    "sentences": [
+      {
+        "translation": "Study.",
+        "words": [
+          {
+            "text": "学习",
+            "pinyin": "xué xí",
+            "meaning": "study"
+          },
+          {
+            "text": "。",
+            "pinyin": "x",
+            "meaning": ""
+          }
+        ]
+      }
+    ],
+    "valid": false
+  },
+  {
+    "name": "missing source rejected",
+    "text": "学习。",
+    "sentences": [
+      {
+        "translation": "Study.",
+        "words": [
+          {
+            "text": "学习",
+            "pinyin": "xué xí",
+            "meaning": "study"
+          }
+        ]
+      }
+    ],
+    "valid": false
+  },
+  {
+    "name": "punctuation not at sentence end rejected",
+    "text": "学习",
+    "sentences": [
+      {
+        "translation": "Study.",
+        "words": [
+          {
+            "text": "。",
+            "pinyin": "",
+            "meaning": ""
+          },
+          {
+            "text": "学习",
+            "pinyin": "xué xí",
+            "meaning": "study"
+          }
+        ]
+      }
+    ],
+    "valid": false
+  },
+  {
+    "name": "empty sentence after punctuation rejected",
+    "text": "学习",
+    "sentences": [
+      {
+        "translation": "Empty.",
+        "words": [
+          {
+            "text": "。",
+            "pinyin": "",
+            "meaning": ""
+          }
+        ]
+      },
+      {
+        "translation": "Study.",
+        "words": [
+          {
+            "text": "学习",
+            "pinyin": "xué xí",
+            "meaning": "study"
+          }
+        ]
+      }
+    ],
+    "valid": false
+  }
+]

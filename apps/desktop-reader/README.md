@@ -1,6 +1,22 @@
 # Chinese Book
 
-Offline desktop reader for the prepared Chinese textbook. Scroll normally,
+Desktop reader for the prepared Chinese textbook and imported PDFs. Choose a
+book from the top-left menu, or use **＋ PDF** or drag a PDF onto the pages to
+import it. Imported books live in `~/chinese-docs/books` and open immediately.
+Select **Process** to send page images to Google Vision and recognized text to
+DeepSeek for Chinese word lookup and translations; this uses cloud services and
+their associated charges. Up to 10 pages run in parallel, in batches capped at
+approximately 28 MB of encoded OCR images. Set `CHINESE_BOOK_PARALLEL_PAGES`
+to 1–20 in the reader server's environment to change the page limit. The
+desktop sends page images for OCR, while the reMarkable worker sends PDF pages.
+Processing progress and errors appear in the reader. If a page fails, the
+current batch finishes and no new batch starts; retry reuses completed pages and
+OCR results, but may repeat a request that was interrupted.
+Completed books work offline. API credentials must be in the private file
+`~/.config/duchinese/pdf-processor-credentials.json` with mode 0600, containing
+`vision_api_key` and `deepseek_api_key`.
+
+Scroll normally,
 click words for translations, and pinch to zoom just the PDF.
 
 Press **T**, then click the starting point for a textbox. Type with your normal
@@ -16,7 +32,10 @@ removes it from the saved PDF. Empty or whitespace-only textboxes disappear
 when they lose focus. No toolbar is added.
 
 The original textbook is preserved. Text is saved as editable PDF FreeText
-annotations in `~/Documents/Chinese Book.pdf`. Textbox state and recovery drafts
+annotations in `~/chinese-docs/Chinese Book.pdf`. An existing copy in
+`~/Documents/Chinese Book.pdf` is copied there the first time the reader starts.
+Imported books have their own `annotated.pdf` alongside their source and data.
+Textbox state and recovery drafts
 are also kept locally. The copy is created on the first nonempty textbox save.
 
 ```sh

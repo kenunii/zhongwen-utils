@@ -21,4 +21,4 @@ duchinese-pdf = "duchinese_pdf.__main__:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-duchinese_pdf = ["templates/*.html", "prompts/*.txt"]
+duchinese_pdf = ["templates/*.html", "prompts/*.txt", "prompts/*.json"]

@@ -46,9 +46,6 @@ type Manager struct {
 	states           map[string]Status
 }
 
-const defaultParallelPages = 10
-const maxPreparedPageBytes = 28_000_000
-
 func atomicJSON(path string, value any) error {
 	data, err := json.Marshal(value)
 	if err != nil {
